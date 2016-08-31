@@ -99,12 +99,13 @@ router.post('/api/v1/addclip', function(req, res) {
 });
 
 // read
-// e.g. http://localhost:3000/api/v1/clips?id=1234567890
+// e.g. http://localhost:3000/api/v1/clips?hash=2a27386e64d5a0bc42966a490b0126aff248b7feeff34446eac6bba8177a3694&file=Odyssey%20Pt.%201.mp3
 router.get('/api/v1/clips', function(req, res) {
 
     var results = [];
 
     var hash = req.query.hash || null;
+    var file = req.query.file || null;
 
     // Get a Postgres client from the connection pool
     pg.connect(connectionString, function(err, client, done) {
@@ -119,6 +120,9 @@ router.get('/api/v1/clips', function(req, res) {
         var query = client.query("SELECT * FROM clips ORDER BY hash ASC");
         if (hash) {
           var query = client.query("SELECT * FROM clips WHERE hash=($1) ORDER BY hash ASC", [hash]);
+          if (file) {
+            var query = client.query("SELECT * FROM clips WHERE hash=($1) AND file=($2) ORDER BY hash ASC", [hash, file]);
+          }
         }
 
         // Stream results back one row at a time
