@@ -75,21 +75,17 @@ router.post('/api/v1/addclip', function(req, res) {
         }
 
         // see if there is an existing item
-        var query = client.query("SELECT * FROM clips ORDER BY hash ASC");
+        var query = client.query("SELECT * FROM clips WHERE hash=($1) AND file=($2) ORDER BY hash ASC", [data.hash, data.file]);
         query.on('row', function(row) {
-            console.log('jjoyce got a row')
-            if ((row.hash == data.hash) && (row.file == data.file)) {
-              console.log('jjoyce got a row match')
-              //update the likes array
-              for (var i=0; i<101; i++) {
-                likes[i] += row.likes[i];
-              }
-              client.query("UPDATE clips SET likes=($1) WHERE hash=($2) AND file=($3)", [likes, row.hash, row.file]);
-              results.push({hash: row.hash, file: row.file, likes: likes});
+            //update the likes array
+            for (var i=0; i<101; i++) {
+              likes[i] += row.likes[i];
             }
+            client.query("UPDATE clips SET likes=($1) WHERE hash=($2) AND file=($3)", [likes, row.hash, row.file]);
+            results.push({hash: row.hash, file: row.file, likes: likes});
         });
 
-        // After all data is returned, close connection and return results
+        // After all data is returned, check to see if we need to insert
         query.on('end', function() {
             if (results.length == 0) {
               client.query("INSERT INTO clips(hash, file, likes) values($1, $2, $3)", [data.hash, data.file, likes]);
